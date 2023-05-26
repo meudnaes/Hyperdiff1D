@@ -17,7 +17,7 @@ from matplotlib.animation import FuncAnimation
 # Mesh
 x0 = 0
 xf = 50
-xm = 50/2    
+xm = 50/2 + 2   
 nx = 256
 x = np.linspace(x0, xf, nx)
 
@@ -25,7 +25,7 @@ rho_b = 0.125
 rho_h = 1.0
 
 Pg_b = 0.125/gamma
-Pg_h = 1.0/gamma
+Pg_h = Pg_b #1.0/gamma
 
 # Allocate arrays for solution
 nt = 200
@@ -62,10 +62,10 @@ e_n[0, :] = e0[:]
 t = np.zeros(nt)
 
 # Set up solver
-solver = SolveMHD1D(x, rho0, u0, e0, boundaries='periodic', nu_p=1.0, nu_e=0.0, nu_1=0.2, nu_2=0.3, nu_3=0.5)
+solver = SolveMHD1D(x, rho0, u0, e0, boundaries='periodic', nu_p=1.0, nu_e=0.0, nu_1=0.2, nu_2=0.3, nu_3=0.5, cfl_cut=0.1)
 
 # Save every 10 timestep
-nsave = 50
+nsave = 1000
 for i in range(1, nt*nsave):
     
     t_i, rho_i, u_i, e_i = solver()

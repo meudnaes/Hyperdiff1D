@@ -9,6 +9,7 @@ from sod_shock_exact import SodShockTube
 from utils import sigmoid
 
 # Global modules
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -19,7 +20,7 @@ from matplotlib.animation import FuncAnimation
 # ================== #
 x0 = 0
 xf = 1
-nx = 257
+nx = 526
 x = np.linspace(x0, xf, nx)
 
 rho_R = 0.125
@@ -41,7 +42,7 @@ P0 = sigmoid(x, Pg_L, Pg_R, s=slope)
 u0 = np.zeros_like(x)
 
 # Energy density
-e0 = P0/((gamma - 1)*rho0)
+e0 = P0/(gamma - 1)
 
 # ============================= #
 # Calculate analytical solution
@@ -54,10 +55,11 @@ def test_params(nu_p, nu_e, nu_1, nu_2, nu_3):
 
     # Set up solver
     solver = SolveMHD1D(x, rho0, u0, e0, boundaries='fixed',
-                        nu_p=nu_p, nu_e=nu_e, nu_1=nu_1, nu_2=nu_2, nu_3=nu_3)
+                        nu_p=nu_p, nu_e=nu_e, nu_1=nu_1, nu_2=nu_2, nu_3=nu_3,
+                        step='forward', cfl_cut=0.7)
 
     # Evolve for 500 steps
-    for _ in range(2000):
+    for _ in range(50):
         
         _, _, _, _ = solver()
 
@@ -70,7 +72,7 @@ def test_params(nu_p, nu_e, nu_1, nu_2, nu_3):
 def animate():
 
     # Allocate arrays for solution
-    nt = 400
+    nt = 200
     u_n = np.zeros((nt, nx))
     rho_n = np.zeros_like(u_n)
     e_n = np.zeros_like(u_n)
@@ -84,10 +86,11 @@ def animate():
 
     # Set up solver
     solver = SolveMHD1D(x, rho0, u0, e0, boundaries='fixed',
-                        nu_p=1.0, nu_e=0.5, nu_1=0.2, nu_2=0.03, nu_3=0.2)
+                        nu_p=1.0, nu_e=0.0, nu_1=0.1, nu_2=0.1, nu_3=0.2,
+                        cfl_cut=0.7, step='forward')
 
     # Save every 10 timestep
-    nsave = 100
+    nsave = 150
     for i in range(1, nt*nsave):
         
         t_i, rho_i, u_i, e_i = solver()
@@ -121,7 +124,7 @@ def animate():
     def animate(i):
         # exact solution
         x_e, P_e, rho_e, u_e = exact(t[i*skipframes], N=25)
-        e_e = P_e/((gamma - 1)*rho_e)
+        e_e = P_e/(gamma - 1)
 
         P_i = ideal_gas_law(rho_n[i*skipframes], e_n[i*skipframes])
 
@@ -171,10 +174,10 @@ if __name__ == "__main__":
 
         nu_params = {
                         'nu_p' : [1.0],
-                        'nu_e' : [0.4],
-                        'nu_1': [0.2],
+                        'nu_e' : [0.3],
+                        'nu_1': [0.1],
                         'nu_2': [0.1],
-                        'nu_3': [0, 0.2, 0.3, 0.5],
+                        'nu_3': [0.3],
                     }
 
         fig, ax = plt.subplots(2, 2, figsize=(8,5))
@@ -183,7 +186,13 @@ if __name__ == "__main__":
             
             nu_p, nu_e, nu_1, nu_2, nu_3 = params
 
-            t, rho, u, e = test_params(nu_p, nu_e, nu_1, nu_2, nu_3)
+            start = time.time()
+            for i in range(50):
+                t, rho, u, e = test_params(nu_p, nu_e, nu_1, nu_2, nu_3)
+
+            elapsed = time.time() - start
+
+            print(f"Avg time: {elapsed/50*1e3} ms")
 
             if not np.any(np.isnan(np.array([rho, u, e]))):
                 ls='-'
@@ -200,6 +209,15 @@ if __name__ == "__main__":
                 ax[1, 1].plot(x, P, label=f'{params}', lw=0.8, ls=ls)
             else:
                 print(f'{params} gave NaN at t={t}')
+
+        # exact solution
+        x_e, P_e, rho_e, u_e = exact(t, N=15)
+        e_e = P_e/(gamma - 1)
+
+        ax[0, 0].scatter(x_e, rho_e, color='r', marker='x', linewidth=0.5)
+        ax[0, 1].scatter(x_e, u_e, color='r', marker='x', linewidth=0.5)
+        ax[1, 0].scatter(x_e, e_e, color='r', marker='x', linewidth=0.5)
+        ax[1, 1].scatter(x_e, P_e, color='r', marker='x', linewidth=0.5)
 
         ax[0, 0].legend()
         ax[0, 1].legend()

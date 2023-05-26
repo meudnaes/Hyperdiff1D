@@ -23,7 +23,7 @@ def ideal_gas_law(rho, e):
         gas pressure
     """
 
-    return rho*(gamma - 1)*e
+    return (gamma - 1)*e
 
 def sound_speed(rho, P):
     """
