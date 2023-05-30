@@ -1,6 +1,6 @@
-function wrap_boundary(a::AbstractVector, gzones::Integer)
+function wrap_boundary(a::AbstractVector, ghost_cells::Integer)
 
-    b = typeof(a)(undef, length(a)+2*gzones)
+    b = typeof(a)(undef, length(a)+2*ghost_cells)
 
     b[4:end-3] .= a
 
@@ -18,9 +18,9 @@ function wrap_boundary(a::AbstractVector)
 
 end
 
-function fixed_boundary(a::AbstractVector, gzones::Integer)
+function reflect_boundary(a::AbstractVector, ghost_cells::Integer)
 
-    b = typeof(a)(undef, length(a)+2*gzones)
+    b = typeof(a)(undef, length(a)+2*ghost_cells)
 
     b[4:end-3] .= a
 
@@ -31,7 +31,7 @@ function fixed_boundary(a::AbstractVector, gzones::Integer)
 
 end
 
-function fixed_boundary(a::AbstractVector)
+function reflect_boundary(a::AbstractVector)
 
     a[1:3] .= a[4]
     a[end-2:end] .= a[end-3]

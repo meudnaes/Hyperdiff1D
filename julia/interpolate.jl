@@ -9,7 +9,7 @@ const a_i = 1/2 - b_i - c_i
 
 
 @doc raw"""
-    x_shift(var::AbstractVector; shift::Integer=-1)
+    x_shift(solver::Solver, var::AbstractVector; shift::Integer=-1)
 
 5th-order interpolation operator to shift quantity a half grid point
 in the x-direction
@@ -33,10 +33,6 @@ out : `1D Array`
     Quantity defined at cell center of grid
 """
 function x_shift(solver::Solver, var::AbstractVector; shift::Integer=-1)
-
-    
-    start = 3 - shift
-    stop = 3 + shift
 
     out = typeof(var)(undef, length(var))
 

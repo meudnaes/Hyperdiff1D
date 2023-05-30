@@ -7,10 +7,6 @@ function step_forward(solver::Solver,
                       u::AbstractVector, 
                       e::AbstractVector)
 
-    solver.pad(rho)
-    solver.pad(u)
-    solver.pad(e)
-
     dt = cfl_condition(solver, rho, u, e)
     t_new = t + dt
 

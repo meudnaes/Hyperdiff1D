@@ -17,18 +17,17 @@ struct Solver{T <: AbstractFloat}
                     boundaries::String="periodic", 
                     equation_of_state::String="ideal",
                     nu_p::T=1.0, 
-                    nu_e::T=0.3, 
                     nu_1::T=0.1, 
                     nu_2::T=0.1, 
                     nu_3::T=0.3,
-                    cfl_cut::T=0.5) where T <: AbstractFloat
+                    cfl_cut::T=0.8) where T <: AbstractFloat
 
         dx = x[2] - x[1]
 
         if boundaries=="periodic"
             pad = wrap_boundary
-        elseif boundaries=="fixed"
-            pad = fixed_boundary
+        elseif boundaries=="reflect"
+            pad = reflect_boundary
         else
             throw(ErrorException("Boundary condition $boundary not implemented"))
         end
@@ -48,7 +47,6 @@ struct Solver{T <: AbstractFloat}
         e0 = eos.(p0, mode=:energy)
 
         parameters = Dict("nu_p" => nu_p,
-                          "nu_e" => nu_e,
                           "nu_1" => nu_1,
                           "nu_2" => nu_2,
                           "nu_3" => nu_3)

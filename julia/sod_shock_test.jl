@@ -1,8 +1,14 @@
 include("utils.jl")
 
+import .SolveMHD: gamma
 using .SolveMHD
 
-function sod_shock(; nx::Integer=526, nt::Integer=50, nsave::Integer=1)
+function sod_shock(; nu_1::AbstractFloat=0.1,
+                   nu_2::AbstractFloat=0.1, 
+                   nu_3::AbstractFloat=0.3, 
+                   nx::Integer=526,
+                   nt::Integer=50, 
+                   nsave::Integer=1)
     # ================== # 
     # Initial conditions
     # ================== #
@@ -28,8 +34,8 @@ function sod_shock(; nx::Integer=526, nt::Integer=50, nsave::Integer=1)
     # Velocity
     u_0 = zero(x)
 
-    solver = Solver(x, P_0, rho_0, u_0, boundaries="fixed", cfl_cut=0.8,
-                    nu_p=1.0, nu_e=0.3, nu_1=0.1, nu_2=0.1, nu_3=0.3)
+    solver = Solver(x, P_0, rho_0, u_0, boundaries="reflect", cfl_cut=0.8,
+                    nu_p=1.0, nu_1=nu_1, nu_2=nu_2, nu_3=nu_3)
 
     t = Vector{Float64}(undef, nt)
     rho = Matrix{Float64}(undef, nt, nx)

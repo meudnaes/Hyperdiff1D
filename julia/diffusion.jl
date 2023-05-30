@@ -37,7 +37,6 @@ function hyperdiffusion(solver::Solver,
     inner = @. solver.dx*(src1 + src2 + src3)*df*Q
 
     # Derivative returns at cell face, i+1/2
-    hyperdiff = deriv_6th(solver, inner, shift=0)
+    return deriv_6th(solver, inner, shift=0)
     
-    return hyperdiff
 end
