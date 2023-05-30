@@ -1,4 +1,4 @@
-include("utils.jl")
+include("../utils/utils.jl")
 
 import .SolveMHD: gamma
 using .SolveMHD
