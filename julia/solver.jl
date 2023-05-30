@@ -5,7 +5,7 @@ export step_forward, step_rk4
 
 include("initialise.jl")
 include("equations.jl")
-include("update.jl")
+include("step.jl")
 include("derivatives.jl")
 include("interpolate.jl")
 include("boundaries.jl")
