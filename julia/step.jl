@@ -7,20 +7,20 @@ function step_forward(solver::Solver,
                       u::AbstractVector, 
                       e::AbstractVector)
 
-    dt = cfl_condition(solver, rho, u, e)
+    dt = cfl_condition(solver,rho,u,e)
     t_new = t + dt
 
     # Solve rho from equation of mass
-    rho_new = rho + dt*continuity_equation(solver, rho, u)
+    rho_new = rho + dt*continuity_equation(solver,t,rho,u)
 
     # Solve u from equation of momentum
-    rho_shift = x_shift(solver, rho, shift=0)
-    rho_new_shift = x_shift(solver, rho_new, shift=0)
+    rho_shift = x_shift(solver,t,rho,shift=0)
+    rho_new_shift = x_shift(solver,t,rho_new,shift=0)
 
-    u_new = (rho_shift .* u + dt*momentum_equation(solver, rho, u, e)) ./ rho_new_shift
+    u_new = (rho_shift .* u + dt*momentum_equation(solver,t,rho,u,e)) ./ rho_new_shift
 
     # Solve e from equation of energy
-    e_new = e + dt*energy_equation(solver, rho, u, e)
+    e_new = e + dt*energy_equation(solver,t,rho,u,e)
 
     # Update the variables
     rho = rho_new
@@ -40,13 +40,13 @@ function step_simple(solver::Solver,
     """
 
     # Solve rho from equation of mass
-    rho_step = continuity_equation(solver, rho, u)
+    rho_step = continuity_equation(solver,t,rho,u)
 
     # Solve u from equation of momentum
-    u_step = (momentum_equation(solver, rho, u, e) - u .* rho_step) ./ x_shift(solver, rho, shift=0)
+    u_step = (momentum_equation(solver,t,rho,u,e) - u .* rho_step) ./ x_shift(solver,t,rho,shift=0)
 
     # Solve e from equation of energy
-    e_step = energy_equation(solver, rho, u, e)
+    e_step = energy_equation(solver,t,rho,u,e)
 
     return [rho_step, u_step, e_step]
 end
@@ -70,15 +70,15 @@ function step_rk4(solver::Solver,
                   e::AbstractVector)
 
     # cfl_cut = 1.0
-    dt = cfl_condition(solver, rho, u, e)
+    dt = cfl_condition(solver,rho,u,e)
     t_new = t + dt
 
     y0 = [rho, u, e]
 
     k1 = copy(y0)
-    k2 = step_simple(solver, (y0 + k1*dt/2)...)
-    k3 = step_simple(solver, (y0 + k2*dt/2)...)
-    k4 = step_simple(solver, (y0 + k3*dt)...)
+    k2 = step_simple(solver,(y0 + k1*dt/2)...)
+    k3 = step_simple(solver,(y0 + k2*dt/2)...)
+    k4 = step_simple(solver,(y0 + k3*dt)...)
 
     @. ynew = y0 + (k1/6 + k2/3 + k3/3 + k4/6)*dt
 
@@ -110,8 +110,8 @@ function cfl_condition(solver::Solver,
                        e::AbstractVector)
 
     # Information cannot propagate more than one cell
-    P = solver.eos.(e, mode=:pressure)
-    c_fast = solver.c_s.(P, rho)
+    P = solver.eos.(e,mode=:pressure)
+    c_fast = solver.c_s.(P,rho)
     dt1 = solver.dx/maximum(abs.(u) + c_fast)
 
     # Time-step from hyper-diffusion

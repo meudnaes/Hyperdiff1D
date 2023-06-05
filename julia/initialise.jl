@@ -1,12 +1,18 @@
 struct Solver{T <: AbstractFloat}
+    # Computational grid
     x::Vector{T}
     dx::T
+    # Initial conditions
     rho0::Vector{T}
     u0::Vector{T}
     e0::Vector{T}
+    # Equations of state
     eos::Function
     c_s::Function
+    # Boundary conditions
     pad::Function
+    pad!::Function
+    # Hyperdiffusion parameters
     parameters::Dict
     cfl_cut::T
 
@@ -26,8 +32,10 @@ struct Solver{T <: AbstractFloat}
 
         if boundaries=="periodic"
             pad = wrap_boundary
+            pad! = wrap_boundary!
         elseif boundaries=="reflect"
             pad = reflect_boundary
+            pad! = reflect_boundary!
         else
             throw(ErrorException("Boundary condition $boundary not implemented"))
         end
@@ -40,9 +48,9 @@ struct Solver{T <: AbstractFloat}
         end
 
         # Fill boundaries with three ghost zones
-        p0 = pad(p0, 3)
-        rho0 = pad(rho0, 3)
-        u0 = pad(u0, 3)
+        p0 = pad(0.0, p0)
+        rho0 = pad(0.0, rho0)
+        u0 = pad(0.0, u0)
 
         e0 = eos.(p0, mode=:energy)
 
@@ -51,6 +59,6 @@ struct Solver{T <: AbstractFloat}
                           "nu_2" => nu_2,
                           "nu_3" => nu_3)
 
-        new{T}(x, dx, rho0, u0, e0, eos, c_s, pad, parameters, cfl_cut)
+        new{T}(x, dx, rho0, u0, e0, eos, c_s, pad, pad!, parameters, cfl_cut)
     end
 end

@@ -33,7 +33,7 @@ Returns
 out : `1D array`
     Derivative in x-direction
 """
-function deriv_6th(solver::Solver, var::AbstractVector; shift::Integer=-1)
+function deriv_6th(solver::Solver, t::AbstractFloat, var::AbstractVector; shift::Integer=-1)
 
     out = typeof(var)(undef, length(var))
 
@@ -46,7 +46,7 @@ function deriv_6th(solver::Solver, var::AbstractVector; shift::Integer=-1)
                 )
     end
 
-    solver.pad(out)
+    solver.pad!(solver,t,out,:derivative)
     
     # divide by dx, which is defined in opposite direction
     return out./(-solver.dx)

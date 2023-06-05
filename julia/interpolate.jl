@@ -32,7 +32,7 @@ Returns
 out : `1D Array`
     Quantity defined at cell center of grid
 """
-function x_shift(solver::Solver, var::AbstractVector; shift::Integer=-1)
+function x_shift(solver::Solver, t::AbstractFloat, var::AbstractVector; shift::Integer=-1)
 
     out = typeof(var)(undef, length(var))
 
@@ -45,7 +45,7 @@ function x_shift(solver::Solver, var::AbstractVector; shift::Integer=-1)
                 )
     end
 
-    solver.pad(out)
+    solver.pad!(solver,t,out,:shift)
     
     return out
 end

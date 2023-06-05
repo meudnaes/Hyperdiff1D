@@ -21,7 +21,7 @@ Returns
 out : `Array`
     Result from the quenching of `var`
 """
-function quenchx(solver::Solver, var::AbstractVector)
+function quenchx(solver::Solver, t::AbstractFloat, var::AbstractVector)
 
     nx = length(var)
 
@@ -43,7 +43,7 @@ function quenchx(solver::Solver, var::AbstractVector)
         out[i] = max(qq[i-1], qq[i], qq[i+1])
     end
 
-    solver.pad(out)
+    solver.pad!(solver,t,out,:shift)
 
     return out
 end
