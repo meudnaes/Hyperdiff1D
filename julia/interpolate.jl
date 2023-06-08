@@ -32,20 +32,18 @@ Returns
 out : `1D Array`
     Quantity defined at cell center of grid
 """
-function x_shift(solver::Solver, t::AbstractFloat, var::AbstractVector; shift::Integer=-1)
+function x_shift(var::AbstractVector; shift::Integer=-1)
 
-    out = typeof(var)(undef, length(var))
+    out = typeof(var)(undef, length(var)-6)
 
     # Calculate the interpolations for the inner grid points
     for i in 4:length(var)-3
-        out[i] = ( 
+        @inbounds out[i-3] = ( 
                 a_i*(var[i+shift] + var[i+1+shift]) +
                 b_i*(var[i-1+shift] + var[i+2+shift]) +
                 c_i*(var[i-2+shift] + var[i+3+shift])
                 )
     end
-
-    solver.pad!(solver,t,out,:shift)
     
     return out
 end

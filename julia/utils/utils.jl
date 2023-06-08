@@ -33,9 +33,9 @@ Parameters
 ----------
 x : float or array
     axis
-A_c : float
+A_h : float
     Height envelope
-A_R :
+A_b :
     Bottom of envelope
 xm : float
     midpoint of envelope
@@ -48,4 +48,13 @@ function gaussian(x::T, A_h::T, A_b::T;
     f = exp(-(x-xm)^2/s^2)
 
     return f*(A_h - A_b) + A_b
+end
+
+"""
+    sine_wave(t::T, x::T, ω::T, k::T, φ::T) where T<:AbstractFloat
+
+Expression for a driven sine wave
+"""
+function sine_wave(x::T, t::T, k::T, ω::T, φ::T) where T<:AbstractFloat
+    sin(k*x - ω*t + φ)
 end

@@ -18,16 +18,15 @@ rhs : array
 
 """
 function continuity_equation(solver::Solver,
-                             t::AbstractFloat,
                              rho::AbstractVector,
                              u::AbstractVector)
 
     # Shift rho to cell face
-    rho_shift = x_shift(solver, t, rho, shift=0)
+    rho_shift = x_shift(rho[4:end-3],shift=0)
 
     # momentum
-    p = rho_shift .* u
-    rhs = -deriv_6th(solver, t, p, shift=-1)
+    p = rho_shift .* u[7:end-6]
+    rhs = -deriv_6th(solver,p,shift=-1)
     
     return rhs
 end
@@ -55,23 +54,22 @@ rhs : array
 
 """
 function momentum_equation(solver::Solver, 
-                           t::AbstractFloat,
                            rho::AbstractVector, 
                            u::AbstractVector, 
                            e::AbstractVector)
 
     # first term, d rho u**2 / dx, at i+1/2
-    u_shift = x_shift(solver,t,u,shift=-1)
-    src1 = - deriv_6th(solver,t,rho .* u_shift .^ 2,shift=0)
+    u_shift = x_shift(u,shift=-1)
+    src1 = - deriv_6th(solver,rho[10:end-9] .* u_shift[7:end-6] .^ 2,shift=0)
 
     # second term, hyperdiffusion, at i+1/2
-    rho_shift = x_shift(solver,t,rho,shift=0)
-    f = u .* rho_shift
-    src2 = solver.parameters["nu_p"]*hyperdiffusion(solver,t,rho,u,e,f)
+    rho_shift = x_shift(rho,shift=0)
+    f = u[4:end-3] .* rho_shift
+    src2 = solver.parameters["nu_p"]*hyperdiffusion(solver,rho,u,e,f)
 
     # third term, d P / dx, at i+1/2
-    P = solver.eos.(e, mode=:pressure)
-    src3 = - deriv_6th(solver,t,P,shift=0)
+    P = solver.eos.(e[10:end-9],mode=:pressure)
+    src3 = - deriv_6th(solver,P,shift=0)
 
     rhs = src1 + src2 + src3
 
@@ -102,19 +100,17 @@ rhs : array
 
 """
 function energy_equation(solver::Solver, 
-                         t::AbstractFloat,
-                         rho::AbstractVector, 
                          u::AbstractVector, 
                          e::AbstractVector)
 
 
     # first term, d e u / dx, returns in cell centre
-    e_shift = x_shift(solver, t, e, shift=0)
-    src1 = - deriv_6th(solver, t, e_shift .* u, shift=-1)
+    e_shift = x_shift(e[7:end-6],shift=0)
+    src1 = - deriv_6th(solver,e_shift .* u[10:end-9],shift=-1)
 
     # second term, P d u / dx, returns in cell centre
-    P = solver.eos.(e, mode=:pressure)
-    src2 = - P .* deriv_6th(solver, t, u, shift=-1)
+    P = solver.eos.(e[13:end-12],mode=:pressure)
+    src2 = - P .* deriv_6th(solver,u[10:end-9],shift=-1)
 
     # third term, viscosity: mu (d u / dx)**2
     # src3 = ...

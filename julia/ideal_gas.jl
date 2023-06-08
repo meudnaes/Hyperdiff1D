@@ -1,4 +1,10 @@
+import PhysicalConstants.CODATA2018: m_u, k_B
+
+using Unitful
+
 const gamma = 5/3
+# Average particle mass
+const μ = 1.0
 
 """
     ideal_gas(value::AbstractFloat, mode=:pressure::Symbol)
@@ -24,7 +30,18 @@ function ideal_gas(x::AbstractFloat; mode::Symbol=:pressure)
 end
 
 """
-    sound_speed(e::AbstractVector)
+    ideal_gas(e::AbstractFloat, rho::AbstractFloat)
+
+Calculates temperature in an ideal gas
+"""
+function ideal_gas(e::AbstractFloat, rho::AbstractFloat)
+
+    (gamma - 1)*e/rho*μ*ustrip(m_u/k_B)
+
+end
+
+"""
+    sound_speed(P::AbstractFloat, rho::AbstractFloat)
 
 Sound speed in an ideal gas
 """

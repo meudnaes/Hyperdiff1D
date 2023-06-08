@@ -9,7 +9,7 @@ const a_d = 1 - 3*b_d - 5*c_d
 
 
 @doc raw"""
-    deriv_6th(solver::Solver, var::AbstractVector; shift::Integer=-1)
+    deriv_6th(solver::Solver, t::AbstractFloat, var::AbstractVector; shift::Integer=-1)
 
 6th order Bifrost spatial derivative in x-direction
 
@@ -33,20 +33,18 @@ Returns
 out : `1D array`
     Derivative in x-direction
 """
-function deriv_6th(solver::Solver, t::AbstractFloat, var::AbstractVector; shift::Integer=-1)
+function deriv_6th(solver::Solver, var::AbstractVector; shift::Integer=-1)
 
-    out = typeof(var)(undef, length(var))
+    out = typeof(var)(undef, length(var)-6)
 
     # Calculate derivatives in the inner grid points
     for i in 4:length(var)-3
-        out[i] = ( 
+        @inbounds out[i-3] = ( 
                 a_d*(var[i+shift] - var[i+1+shift]) +
                 b_d*(var[i-1+shift] - var[i+2+shift]) +
                 c_d*(var[i-2+shift] - var[i+3+shift])
                 )
     end
-
-    solver.pad!(solver,t,out,:derivative)
     
     # divide by dx, which is defined in opposite direction
     return out./(-solver.dx)

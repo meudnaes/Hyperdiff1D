@@ -1,5 +1,5 @@
 """
-Evolves the mhd equations by forward in time method
+Evolves the mhd equations by forward in time method, does not fill boundary conditions
 """
 function step_forward(solver::Solver,
                       t::AbstractFloat, 
@@ -11,21 +11,21 @@ function step_forward(solver::Solver,
     t_new = t + dt
 
     # Solve rho from equation of mass
-    rho_new = rho + dt*continuity_equation(solver,t,rho,u)
+    rho_new = rho[10:end-9] + dt*continuity_equation(solver,rho,u)
 
     # Solve u from equation of momentum
-    rho_shift = x_shift(solver,t,rho,shift=0)
-    rho_new_shift = x_shift(solver,t,rho_new,shift=0)
+    rho_shift = x_shift(rho[10:end-9],shift=0)
+    rho_new_shift = x_shift(rho_new,shift=0)
 
-    u_new = (rho_shift .* u + dt*momentum_equation(solver,t,rho,u,e)) ./ rho_new_shift
+    u_new = (rho_shift .* u[13:end-12] + dt*momentum_equation(solver,rho,u,e)) ./ rho_new_shift
 
     # Solve e from equation of energy
-    e_new = e + dt*energy_equation(solver,t,rho,u,e)
+    e_new = e[13:end-12] + dt*energy_equation(solver,u,e)
 
     # Update the variables
-    rho = rho_new
-    u = u_new
-    e = e_new
+    rho[10:end-9] = rho_new
+    u[13:end-12] = u_new
+    e[13:end-12] = e_new
     t = t_new
 
     return t, rho, u, e
@@ -40,13 +40,13 @@ function step_simple(solver::Solver,
     """
 
     # Solve rho from equation of mass
-    rho_step = continuity_equation(solver,t,rho,u)
+    rho_step = continuity_equation(solver,rho,u)
 
     # Solve u from equation of momentum
-    u_step = (momentum_equation(solver,t,rho,u,e) - u .* rho_step) ./ x_shift(solver,t,rho,shift=0)
+    u_step = (momentum_equation(solver,rho,u,e) - u .* rho_step) ./ x_shift(rho,shift=0)
 
     # Solve e from equation of energy
-    e_step = energy_equation(solver,t,rho,u,e)
+    e_step = energy_equation(solver,u,e)
 
     return [rho_step, u_step, e_step]
 end

@@ -7,7 +7,7 @@ quenching factor/quench parameter
 const qmax = 8.0
 
 """
-    quenchx(solver::Solver, var::AbstractVector)
+    quenchx(solver::Solver, t::AbstractFloat, var::AbstractVector)
 
 Quench in x direction
 
@@ -21,7 +21,7 @@ Returns
 out : `Array`
     Result from the quenching of `var`
 """
-function quenchx(solver::Solver, t::AbstractFloat, var::AbstractVector)
+function quenchx(var::AbstractVector)
 
     nx = length(var)
 
@@ -43,7 +43,5 @@ function quenchx(solver::Solver, t::AbstractFloat, var::AbstractVector)
         out[i] = max(qq[i-1], qq[i], qq[i+1])
     end
 
-    solver.pad!(solver,t,out,:shift)
-
-    return out
+    return out[4:end-3]
 end

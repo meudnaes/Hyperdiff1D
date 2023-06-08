@@ -8,7 +8,6 @@
 Calculate hyperdiffusion, f defined at i+1/2
 """
 function hyperdiffusion(solver::Solver,
-                        t::AbstractFloat,
                         rho::AbstractVector, 
                         u::AbstractVector, 
                         e::AbstractVector, 
@@ -18,26 +17,26 @@ function hyperdiffusion(solver::Solver,
     P = solver.eos.(e,mode=:pressure)
 
     # centered
-    src1 = solver.parameters["nu_1"]*solver.c_s.(P,rho)
+    src1 = solver.parameters["nu_1"]*solver.c_s.(P,rho)[10:end-9]
     
     # shifted i+1/2
     src2 = solver.parameters["nu_2"]*abs.(u)
     # centered
-    src2 = x_shift(solver,t,src2,shift=-1)
+    src2 = x_shift(src2,shift=-1)[7:end-6]
 
     # centered
-    src3 = solver.parameters["nu_3"]*solver.dx*deriv_6th(solver,t,u,shift=-1)
+    src3 = solver.parameters["nu_3"]*solver.dx*deriv_6th(solver,u,shift=-1)[7:end-6]
 
     # centered
-    df = deriv_6th(solver,t,f,shift=-1)
-    
-    # centered
-    Q = quenchx(solver,t,df)
+    df = deriv_6th(solver,f,shift=-1)
 
     # centered
-    inner = @. solver.dx*(src1 + src2 + src3)*df*Q
+    Q = quenchx(df)
+
+    # centered
+    inner = @. solver.dx*(src1 + src2 + src3)*df[4:end-3]*Q
 
     # Derivative returns at cell face, i+1/2
-    return deriv_6th(solver,t,inner,shift=0)
+    return deriv_6th(solver,inner,shift=0) #[12:-12]
     
 end

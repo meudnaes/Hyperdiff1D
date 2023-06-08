@@ -1,79 +1,92 @@
+include("utils/utils.jl")
+
+# number of ghost cells
+const Ng=12
+
 """
     wrap_boundary(a::AbstractVector)
 
 Fills the ghost cells of `a` to make periodic boundary conditions
 """
-function wrap_boundary(t::AbstractFloat, a::AbstractVector)
+function wrap_boundary(a::AbstractVector)
 
-    b = typeof(a)(undef, length(a)+6)
+    b = typeof(a)(undef, length(a)+2*Ng)
 
-    b[4:end-3] .= a
+    b[Ng+1:end-Ng] .= a
 
-    b[1:3] .= a[end-2:end]
-    b[end-2:end] .= a[1:3]
-
-    return b
-
-end
-
-function wrap_boundary!(solver::Solver, t::AbstractFloat, a::AbstractVector, mode::Symbol)
-
-    a[1:3] .= a[end-5:end-3]
-    a[end-2:end] .= a[4:6]
-
-end
-
-
-"""
-    reflect_boundary(a::AbstractVector)
-
-Fills the ghost cells of `a` to make fixed boundary conditions. Does not work
-perfectly
-"""
-function reflect_boundary(t::AbstractFloat, a::AbstractVector)
-
-    b = typeof(a)(undef, length(a)+6)
-
-    b[4:end-3] .= a
-
-    b[1:3] .= a[1]
-    b[end-2:end] .= a[end]
+    b[1:Ng] .= a[end-Ng+1:end]
+    b[end-Ng+1:end] .= a[1:Ng]
 
     return b
 
 end
 
-function reflect_boundary!(solver::Solver, t::AbstractFloat, a::AbstractVector, mode::Symbol)
+function wrap_boundary!(a::AbstractVector)
 
-    if mode==:derivative
-        a[1:3] .= 0
-        a[end-2:end] .= 0
-    end
+    a[1:Ng] .= a[end-2*Ng+1:end-Ng]
+    a[end-Ng+1:end] .= a[Ng+1:2*Ng]
 
-    a[1:3] .= a[4]
-    a[end-2:end] .= a[end-3]
+end
+
+
+"""
+    reflect_boundary(a::AbstractVector, a_L::AbstractFloat, a_R::AbstractFloat)
+
+Fills the ghost cells of `a` to make fixed boundary conditions.
+"""
+function reflect_boundary(a::AbstractVector, a_L::AbstractFloat, a_R::AbstractFloat)
+
+    b = typeof(a)(undef, length(a)+2*Ng)
+
+    b[Ng+1:end-Ng] .= a
+
+    b[1:Ng] .= a_L
+    b[end-Ng+1:end] .= a_R
+
+    return b
+
+end
+
+function reflect_boundary!(a::AbstractVector, a_L::AbstractFloat, a_R::AbstractFloat)
+
+    a[1:Ng] .= a_L
+    a[end-Ng+1:end] .= a_R
 
 end
 
 """
-    drive_boundary(a::AbstractVector)
+    drive_boundary(x::AbstractVector, t::AbstractFloat, a::AbstractVector)
 
 Fills the ghost cells of `a` to make a wave driven boundary condition at the
 left side and a fixed boundary at the right side
 """
-function drive_boundary(t::AbstractFloat, a::AbstractVector)
+function drive_boundary(a::AbstractVector,
+                        x::AbstractVector,
+                        t::AbstractFloat, 
+                        k::AbstractFloat,
+                        ω::AbstractFloat, 
+                        a_L::AbstractFloat,
+                        a_R::AbstractFloat)
 
-    b = typeof(a)(undef, length(a)+6)
+    b = typeof(a)(undef, length(a)+2*Ng)
 
-    b[4:end-3] .= a
+    b[Ng+1:end-Ng] .= a
 
+    b[1:Ng] = sine_wave.(x, t, k, ω, 0.0)/75.0 .+ a_L
+    b[end-Ng+1:end] .= a_R
+
+    return b
 end
 
+function drive_boundary!(a::AbstractVector,
+                         x::AbstractVector,
+                         t::AbstractFloat, 
+                         k::AbstractFloat,
+                         ω::AbstractFloat, 
+                         a_L::AbstractFloat,
+                         a_R::AbstractFloat)
 
-function drive_boundary!(solver::Solver, t::AbstractFloat, a::AbstractVector, mode::Symbol)
-
-    b = typeof(a)(undef, length(a)+6)
-
-    b[4:end-3] .= a
+    a[1:Ng] = sine_wave.(x, t, k, ω, 0.0)/75.0 .+ a_L
+    a[end-Ng+1:end] .= a_R
 
 end
