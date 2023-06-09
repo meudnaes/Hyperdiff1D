@@ -19,7 +19,7 @@ c = 3/256
 b = -25/256
 a = 1/2 - b - c
 
-@njit(parallel=True)
+@njit(parallel=False)
 def x_shift(var, shift=-1, bnd_type='wrap'):
     """
     5th-order interpolation operator to shift quantity a half grid point

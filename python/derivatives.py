@@ -22,7 +22,7 @@ a = 1 - 3*b - 5*c
 # From Bifrost
 
 
-@njit(parallel=True)
+@njit(parallel=False)
 def deriv_6th(x, var, shift=-1, bnd_type='wrap'):
     r"""
     6th order Bifrost spatial derivative in x-direction
