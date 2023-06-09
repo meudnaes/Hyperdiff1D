@@ -5,8 +5,11 @@ import .SolveMHD: Ng
 using .SolveMHD
 using FFTW
 using Plots
+using PyPlot
+using PyCall
 using ProgressBars
-using Statistics
+using Random
+using LsqFit
 
 function random_perturbation(; nu_1::AbstractFloat=0.1,
                              nu_2::AbstractFloat=0.1, 
@@ -17,11 +20,12 @@ function random_perturbation(; nu_1::AbstractFloat=0.1,
                              animate::Bool=false,
                              k_diagram::Bool=false)
 
+    Random.seed!(1998)
     # ================== # 
     # Initial conditions
     # ================== #
-    x0 = 0
-    xf = 1
+    x0 = 0.0
+    xf = 10.0
     x = collect(LinRange(x0, xf, nx))
 
     P_0 = (rand(nx) .- 0.5)/3 .+ 0.5
@@ -76,7 +80,7 @@ function random_perturbation(; nu_1::AbstractFloat=0.1,
     if animate
         println("-- animating solution")
         anim = @animate for i in 1:nt
-            plot(x, rho[i, :],
+            Plots.plot(x, rho[i, :],
                 dpi=150, 
                 title="t=$(round(t[i], digits=1))",
                 xlabel="x",
@@ -89,39 +93,87 @@ function random_perturbation(; nu_1::AbstractFloat=0.1,
     end
 
     if k_diagram
-        # Do a FFT in x and t and see which wave modes survive, change nu's
-        F = fft(e.-mean(e))
+        py"""
+       from mpl_toolkits.axes_grid1 import make_axes_locatable
+       """
+        make_axes_locatable = py"""make_axes_locatable"""
 
-        freq = fftfreq(nt, 1/dt_save)
         kx = fftfreq(nx, 1/solver.dx)
 
-        idf = freq .> 0
         idk = kx .> 0
-
-        freq = freq[idf]
         kx = kx[idk]
 
-        F = F[idf,:]
-        F = F[:, idk]
+        PSD = Matrix{Float64}(undef, nt, length(kx))
 
-        #=
-        heatmap(transpose(abs.(F).^2),
-                x=freq,
-                y=kx,
-                xlabel="frequency (Hz)",
-                ylabel="wavenumber (1/m)")
-        =#
+        for i in 1:nt
+            F = fft(e[i,:] .- mean(e[i,:]))
+            F = 2*abs.(F[idk]).^2/solver.dx
 
-        F1 = fft(e[1,:] .- mean(e[1,:]))
-        F1 = F1[idk]
+            PSD[i, :] .= F
+        end
 
-        Fend = fft(e[end,:] .- mean(e[end,:]))
-        Fend = Fend[idk]
+        # Do the curve fitting for decaying of wave...
+        # We have the square of the decaying wave!
+        @. function decaying_wave(t, p)
+                   
+           p[1]^2*exp(-2*p[2]*t)*cos(p[3]*t-p[4])^2
 
-        plot(kx, abs.(Fend).^2, label="end")
-        plot!(kx, abs.(F1).^2, label="start", yscale=:log10, 
-              xlabel="wavenumber (1/m)",
-              ylabel="fourier power")
+        end
+ 
+        p0 = [10.0, 1.0, 60.0, 0.0]
+
+        # Get decay as function of wavenumber!
+        λ = Vector{Float64}(undef, length(kx))
+        for j in 1:length(kx)
+            fit = curve_fit(decaying_wave, t, PSD[:, j], p0);
+            λ[j] = coef(fit)[2]
+        end
+
+        fig, ax = subplots()
+
+        ax.plot(kx, λ)
+        ax.set_xlabel("wavenumber (1/m)")
+        ax.set_ylabel("decay")
+        ax.set_title("Decay as function of wavenumber")
+        fig.savefig("../figs/decay_$(nu_1)_$(nu_2)_$nu_3.pdf")
+
+        extent = [t[1], t[end], kx[1], kx[end]]
+
+        fig, ax = subplots()
+        
+        im = ax.imshow(transpose(PSD), 
+                       origin="lower",
+                       extent=extent, 
+                       aspect="auto",
+                       vmax=5000,
+                       vmin=0)
+        
+        div = make_axes_locatable(ax)
+        cax = div.new_vertical(size ="5%", pad = 0.5)
+        fig.add_axes(cax)
+    
+        cb = fig.colorbar(im, 
+                          cax=cax, 
+                          orientation="horizontal", 
+                          label="power")
+
+        # fig.colorbar(im, label="power", pad=0.04, fraction=0.046)
+        #ax.set_xscale("log")
+        ax.set_ylim([minimum(kx),12.5])
+        ax.set_xlim([t[1], 2.5])
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("wavenumber (1/m)")
+        ax2 = ax.secondary_yaxis("right")
+        ax2.set_ylabel("wavelength (m)")
+        y_vals = ax.get_yticks()
+        y2vals = ["$(round((1000/60/f);digits=2))" for f in y_vals]
+        # y2vals[1] = nothing
+        ax2.set_yticklabels(y2vals)
+        
+        fig.savefig("../figs/k-diagram$(nu_1)_$(nu_2)_$nu_3.pdf")
+        close(fig);
+
+        return t, kx, PSD
 
     end
 
